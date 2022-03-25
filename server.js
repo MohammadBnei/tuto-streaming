@@ -1,16 +1,29 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const cors = require('cors')
 
 app = express();
+app.use(cors())
 
-app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname + '/index.htm'))
-})
+app.get("/", function (req, res) {
+  res.sendFile(path.join(__dirname + "/index.htm"));
+});
 
-app.get("/video", function (req, res) {
-  const path = "video.mp4";
+app.get("/videos", function (req, res) {
+  const files = fs.readdirSync("media/");
+
+  res.send({ videos: files });
+});
+
+app.get("/stream/:id", function (req, res) {
+  const path = "media/" + req.params.id;
+  if (!fs.existsSync(path)) {
+    res.status(404).send(req.params.id + " do not exists");
+    return;
+  }
   const stat = fs.statSync(path);
+  console.log({ stat });
   const fileSize = stat.size;
   const range = req.headers.range;
 
@@ -37,9 +50,7 @@ app.get("/video", function (req, res) {
 
     res.writeHead(206, head);
     file.pipe(res);
-  } 
-  
-  else {
+  } else {
     const head = {
       "Content-Length": fileSize,
       "Content-Type": "video/mp4",
@@ -49,6 +60,6 @@ app.get("/video", function (req, res) {
   }
 });
 
-app.listen(3000, () => {
-  console.log("Listening on port 3000!");
+app.listen(3001, () => {
+  console.log("Listening on port 3001!");
 });
